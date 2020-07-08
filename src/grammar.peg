@@ -1,0 +1,58 @@
+/*
+ @see https://docs.npmjs.com/misc/scope
+ @see https://docs.npmjs.com/files/package.json
+*/
+
+{
+    const INVALID_LEADING_CHARACTERS = /^[._]/;
+    const MAX_SIZE = 214;
+}
+
+Main
+    = input:Package {
+        const {length} = text();
+
+        if (length > MAX_SIZE) {
+            return error(`The name must be less than or equal to ${MAX_SIZE} characters`);
+        }
+
+        return input;
+    }
+;
+
+Package
+    = input:FullName {
+        return input;
+    }
+    / input:ShortName {
+        return input;
+    }
+;
+
+Id
+    = id:$[a-z0-9_.-]+ {
+        const position = id.search(INVALID_LEADING_CHARACTERS);
+
+        if (position !== -1) {
+            const {start} = location();
+
+            return error(`Unexpected character "${id[position]}" at position ${start.column}.`);
+        }
+
+        return id;
+    }
+;
+
+ShortName
+    = name:Id {
+        return {
+            name
+        };
+    }
+;
+
+FullName
+    = "@" scope:Id "/" name:Id {
+        return {scope, name};
+    }
+;

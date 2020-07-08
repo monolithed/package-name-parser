@@ -1,0 +1,25 @@
+{
+    "name": "@pobedit/validate-package-name",
+    "version": "0.0.1",
+    "description": "A package name validator",
+    "author": "Alexander Abashkin <monolithed@gmail.com>",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "git@github.com:pobedit-instruments/validate-package-name.git"
+    },
+    "scripts": {
+        "test": "npm run compile && tsc && mocha tests",
+        "compile": "pegjs -o ./src/grammar.js ./src/grammar.peg"
+    },
+    "devDependencies": {
+        "@types/node": "14.0.13",
+        "@types/mocha": "7.0.2",
+        "mocha": "8.0.1",
+        "pegjs": "^0.10.0",
+        "typescript": "^3.9.5"
+    },
+    "dependencies": {
+        "builtin-modules": "^3.1.0"
+    }
+}
