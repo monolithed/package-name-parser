@@ -1,22 +1,31 @@
 import builtins = require('builtin-modules');
 const grammar = require('./grammar');
 
-import {ErrorMessage} from './messages';
-import {Status} from './status';
+import {ErrorMessage} from './errors';
 import {blacklist} from './blacklist';
 
-type Response = {
+type Package = {
     scope?: string;
     name: string;
 }
 
-const getErrorMessage = (input: string): string | void => {
+type Result = {
+    status: keyof typeof Status;
+    message?: string;
+}
+
+enum Status {
+    OK = 'OK',
+    ERROR = 'ERROR'
+}
+
+const getErrorMessage = (input: string): string | undefined => {
     if (!input) {
         return ErrorMessage.EMPTY;
     }
 
     try {
-        const {scope, name}: Response = grammar.parse(input);
+        const {scope, name}: Package = grammar.parse(input);
 
         if (scope) {
             return void 0;
@@ -35,7 +44,7 @@ const getErrorMessage = (input: string): string | void => {
     }
 };
 
-const validatePackageName = (input: string) => {
+const validatePackageName = (input: string): Result => {
     const message = getErrorMessage(input);
     let status = Status.OK;
 
