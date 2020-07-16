@@ -45,9 +45,7 @@ Id
 
 ShortName
     = name:Id {
-        return {
-            name
-        };
+        return {name};
     }
 ;
 
