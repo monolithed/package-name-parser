@@ -1,12 +1,12 @@
 {
-    "name": "@pobedit/validate-package-name",
+    "name": "@pobedit/package-name-parser",
     "version": "0.0.1",
-    "description": "A package name validator",
+    "description": "A package name parser",
     "author": "Alexander Abashkin <monolithed@gmail.com>",
     "license": "MIT",
     "repository": {
         "type": "git",
-        "url": "git@github.com:pobedit-instruments/validate-package-name.git"
+        "url": "git@github.com:pobedit-instruments/package-name-parser.git"
     },
     "scripts": {
         "test": "npm run compile && tsc && mocha tests",

@@ -1,1 +1,1 @@
-export * from './src/validator';
+export {parse} from './src/parser';

@@ -1,243 +1,276 @@
 import * as assert from 'assert';
-import {
-    validatePackageName,
-    Status,
-    ErrorMessage
-} from '..';
+import {parse} from '..';
 
 describe('Basic validation', () => {
     it('Typical name', () => {
-        const {status} = validatePackageName('package');
+        const expected = 'name';
+        const {name} = parse(expected);
 
-        assert.strictEqual(status, Status.OK);
+        assert.strictEqual(name, expected);
     });
 
     it('Typical name (scope)', () => {
-        const {status} = validatePackageName('@scope/package');
+        const {scope, name} = parse('@scope/name');
 
-        assert.strictEqual(status, Status.OK);
+        assert.deepStrictEqual({scope, name}, {
+            scope: 'scope',
+            name: 'name'
+        });
     });
 
     it('Empty value', () => {
-        const {status, message} = validatePackageName('');
+        const actual = () => parse('');
 
-        assert.strictEqual(status, Status.ERROR);
-        assert.strictEqual(message, ErrorMessage.EMPTY);
+        assert.throws(actual, {
+            message: 'Name cannot be an empty value'
+        });
     });
 
     it('Empty value (scope)', () => {
-        const {status, message} = validatePackageName('@scope/');
+        const actual = () => parse('@scope/');
 
-        assert.strictEqual(status, Status.ERROR);
-        assert.strictEqual(message, 'Expected [a-z0-9_.\\-] but end of input found.');
+        assert.throws(actual, {
+            message: 'Expected [a-z0-9_.\\-] but end of input found.'
+        });
     });
 
     it('One character', () => {
-        const {status} = validatePackageName('p');
+        const expected = 'p';
+        const {scope, name} = parse(expected);
 
-        assert.strictEqual(status, Status.OK);
+        assert.strictEqual(name, expected);
     });
 
     it('One character (scope)', () => {
-        const {status} = validatePackageName('@scope/p');
+        const {scope, name} = parse('@scope/p');
 
-        assert.strictEqual(status, Status.OK);
+        assert.strictEqual(name, 'p');
     });
 
     it('Leading space', () => {
-        const {status, message} = validatePackageName(' package');
+        const actual = () => parse(' package');
 
-        assert.strictEqual(status, Status.ERROR);
-        assert.strictEqual(message, 'Expected "@" or [a-z0-9_.\\-] but " " found.');
+        assert.throws(actual, {
+            message: 'Expected "@" or [a-z0-9_.\\-] but " " found.'
+        });
     });
 
     it('Leading space (scope)', () => {
-        const {status, message} = validatePackageName(' @scope/package');
+        const actual = () => parse(' @scope/package');
 
-        assert.strictEqual(status, Status.ERROR);
-        assert.strictEqual(message, 'Expected "@" or [a-z0-9_.\\-] but " " found.');
+        assert.throws(actual, {
+            message: 'Expected "@" or [a-z0-9_.\\-] but " " found.'
+        });
     });
 
     it('Trailing space', () => {
-        const {status} = validatePackageName('package ');
+        const actual = () => parse('package ');
 
-        assert.strictEqual(status, Status.ERROR);
+        assert.throws(actual, {
+            message: 'Expected [a-z0-9_.\\-] or end of input but " " found.'
+        });
     });
 
     it('Trailing space (scope)', () => {
-        const {status, message} = validatePackageName('@scope/package ');
+        const actual = () => parse('@scope/package ');
 
-        assert.strictEqual(status, Status.ERROR);
-        assert.strictEqual(message, 'Expected [a-z0-9_.\\-] or end of input but " " found.');
+        assert.throws(actual, {
+            message: 'Expected [a-z0-9_.\\-] or end of input but " " found.'
+        });
     });
 
     it('Mixed case', () => {
-        const {status, message} = validatePackageName('Package ');
+        const actual = () => parse('Package ');
 
-        assert.strictEqual(status, Status.ERROR);
-        assert.strictEqual(message, 'Expected "@" or [a-z0-9_.\\-] but "P" found.');
+        assert.throws(actual, {
+            message: 'Expected "@" or [a-z0-9_.\\-] but "P" found.'
+        });
     });
 
     it('Mixed case (scope)', () => {
-        const {status, message} = validatePackageName('@scope/Package ');
+        const actual = () => parse('@scope/Package ');
 
-        assert.strictEqual(status, Status.ERROR);
-        assert.strictEqual(message, 'Expected [a-z0-9_.\\-] but "P" found.');
+        assert.throws(actual, {
+            message: 'Expected [a-z0-9_.\\-] but "P" found.'
+        });
     });
 
     it('Long package name', () => {
-        const {status, message} = validatePackageName('ifyouwanttogetthesumoftwonumberswherethosetwonumbersarechosenbyfindingthelargestoftwooutofthreenumbersandsquaringthemwhichismultiplyingthembyitselfthenyoushouldinputthreenumbersintothisfunctionanditwilldothatforyou- ');
+        const actual = () => parse('ifyouwanttogetthesumoftwonumberswherethosetwonumbersarechosenbyfindingthelargestoftwooutofthreenumbersandsquaringthemwhichismultiplyingthembyitselfthenyoushouldinputthreenumbersintothisfunctionanditwilldothatforyou- ');
 
-        assert.strictEqual(status, Status.ERROR);
-        assert.strictEqual(message, 'The name must be less than or equal to 214 characters');
+        assert.throws(actual, {
+            message: 'The name must be less than or equal to 214 characters'
+        });
     });
 });
 
 describe('Special characters', () => {
     it('Unexpected special characters', () => {
-        const {status, message} = validatePackageName('package!');
+        const actual = () => parse('package!');
 
-        assert.strictEqual(status, Status.ERROR);
-        assert.strictEqual(message, 'Expected [a-z0-9_.\\-] or end of input but "!" found.');
+        assert.throws(actual, {
+            message: 'Expected [a-z0-9_.\\-] or end of input but "!" found.'
+        });
     });
 
     it('Expected special characters', () => {
-        const {status} = validatePackageName('some-_.package');
+        const expected = 'some-_.package';
+        const {scope, name} = parse(expected);
 
-        assert.strictEqual(status, Status.OK);
+        assert.strictEqual(name, expected);
     });
 
     it('Expected special characters (scope)', () => {
-        const {status} = validatePackageName('@scope/some-_.package');
+        const expected = 'some-_.package';
+        const {scope, name} = parse(`@scope/${expected}`);
 
-        assert.strictEqual(status, Status.OK);
+        assert.strictEqual(name, expected);
     });
 
     it('Leading special characters', () => {
-        const {status, message} = validatePackageName('.package');
+        const actual = () => parse('.package!');
 
-        assert.strictEqual(status, Status.ERROR);
-        assert.strictEqual(message, 'Unexpected character "." at position 1.');
+        assert.throws(actual, {
+            message: 'Unexpected character "." at position 1.'
+        });
     });
 
     it('Leading special characters (scope)', () => {
-        const {status, message} = validatePackageName('@scope/.package');
+        const actual = () => parse('@scope/.package');
 
-        assert.strictEqual(status, Status.ERROR);
-        assert.strictEqual(message, 'Unexpected character "." at position 8.');
+        assert.throws(actual, {
+            message: 'Unexpected character "." at position 8.'
+        });
     });
 
     it('One special characters', () => {
-        const {status, message} = validatePackageName('.');
+        const actual = () => parse('.');
 
-        assert.strictEqual(status, Status.ERROR);
-        assert.strictEqual(message, 'Unexpected character "." at position 1.');
+        assert.throws(actual, {
+            message: 'Unexpected character "." at position 1.'
+        });
     });
 
     it('One special characters (scope)', () => {
-        const {status, message} = validatePackageName('@scope/.');
+        const actual = () => parse('@scope/.');
 
-        assert.strictEqual(status, Status.ERROR);
-        assert.strictEqual(message, 'Unexpected character "." at position 8.');
+        assert.throws(actual, {
+            message: 'Unexpected character "." at position 8.'
+        });
     });
 
     it('Leading scope special characters', () => {
-        const {status, message} = validatePackageName('@./.');
+        const actual = () => parse('@./.');
 
-        assert.strictEqual(status, Status.ERROR);
-        assert.strictEqual(message, 'Unexpected character "." at position 2.');
+        assert.throws(actual, {
+            message: 'Unexpected character "." at position 2.'
+        });
     });
 
     it('Trailing special characters', () => {
-        const {status} = validatePackageName('package.');
+        const expected = 'package.';
+        const {scope, name} = parse(expected);
 
-        assert.strictEqual(status, Status.OK);
+        assert.strictEqual(name, expected);
     });
 });
 
 describe('Numeric characters', () => {
     it('Numeric name only', () => {
-        const {status} = validatePackageName('123');
+        const expected = '123';
+        const {scope, name} = parse(expected);
 
-        assert.strictEqual(status, Status.OK);
+        assert.strictEqual(name, expected);
     });
 
     it('Numeric name only (scope)', () => {
-        const {status} = validatePackageName('@scope/123');
+        const expected = '123';
+        const {scope, name} = parse(`@scope/${expected}`);
 
-        assert.strictEqual(status, Status.OK);
+        assert.strictEqual(name, expected);
     });
 
     it('Numeric scope name', () => {
-        const {status} = validatePackageName('@123/123');
+        const expected = '123';
+        const {scope, name} = parse(`@123/${expected}`);
 
-        assert.strictEqual(status, Status.OK);
+        assert.strictEqual(name, expected);
     });
 
     it('Leading numeric', () => {
-        const {status} = validatePackageName('123package');
+        const expected = '123package';
+        const {scope, name} = parse(expected);
 
-        assert.strictEqual(status, Status.OK);
+        assert.strictEqual(name, expected);
     });
 
     it('Leading numeric (scope)', () => {
-        const {status} = validatePackageName('@scope/123package');
+        const expected = '123package';
+        const {scope, name} = parse(`@scope/${expected}`);
 
-        assert.strictEqual(status, Status.OK);
+        assert.strictEqual(name, expected);
     });
 
     it('Trailing numeric', () => {
-        const {status} = validatePackageName('package123');
+        const expected = 'package123';
+        const {scope, name} = parse(expected);
 
-        assert.strictEqual(status, Status.OK);
+        assert.strictEqual(name, expected);
     });
 
     it('Trailing numeric (scope)', () => {
-        const {status} = validatePackageName('@scope/package123');
+        const expected = 'package123';
+        const {scope, name} = parse(`@scope/${expected}`);
 
-        assert.strictEqual(status, Status.OK);
+        assert.strictEqual(name, expected);
     });
 });
 
 describe('Blacklisted characters', () => {
     it('node_modules', () => {
-        const {status, message} = validatePackageName('node_modules');
+        const actual = () => parse('node_modules');
 
-        assert.strictEqual(status, Status.ERROR);
-        assert.strictEqual(message, ErrorMessage.BLACKLIST);
+        assert.throws(actual, {
+            message: 'Name cannot contain blacklisted names'
+        });
     });
 
     it('node_modules (scope)', () => {
-        const {status} = validatePackageName('@scope/node_modules');
+        const expected = 'node_modules';
+        const {scope, name} = parse(`@scope/${expected}`);
 
-        assert.strictEqual(status, Status.OK);
+        assert.strictEqual(name, expected);
     });
 
     it('favicon.ico', () => {
-        const {status, message} = validatePackageName('favicon.ico');
+        const actual = () => parse('favicon.ico');
 
-        assert.strictEqual(status, Status.ERROR);
-        assert.strictEqual(message, ErrorMessage.BLACKLIST);
+        assert.throws(actual, {
+            message: 'Name cannot contain blacklisted names'
+        });
     });
 
     it('favicon.ico (scope)', () => {
-        const {status} = validatePackageName('@scope/favicon.ico');
+        const expected = 'node_modules';
+        const {scope, name} = parse(`@scope/${expected}`);
 
-        assert.strictEqual(status, Status.OK);
+        assert.strictEqual(name, expected);
     });
 });
 
 describe('Builtin characters', () => {
     it('http', () => {
-        const {status, message} = validatePackageName('http');
+        const actual = () => parse('http');
 
-        assert.strictEqual(status, Status.ERROR);
-        assert.strictEqual(message, ErrorMessage.BUILTINS);
+        assert.throws(actual, {
+            message: 'Name cannot contain builtin names'
+        });
     });
 
     it('http (scope)', () => {
-        const {status} = validatePackageName('@scope/http');
+        const expected = 'http';
+        const {scope, name} = parse(`@scope/${expected}`);
 
-        assert.strictEqual(status, Status.OK);
+        assert.strictEqual(name, expected);
     });
 });
