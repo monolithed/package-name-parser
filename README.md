@@ -28,13 +28,28 @@ yarn add @pobedit/package-name
 import {parse} from '@pobedit/package-name-parser';
 
 try {
-    const {scope, name} = parse('@foo/bar');
+    const {scope, name, version} = parse('@foo/bar@0.0.1');
 
-    console.log(scope, name) // -> {scope: 'foo', name: 'bar'}
+    console.log(scope, name, version);
+    /*
+    {
+        scope: 'foo',
+        name: 'bar',
+        version: '0.0.1'
+    }
+    */
 }
 catch ({message}) {
     console.error(message);
 }
+```
+
+`scope` and `version` are optional:
+
+```typescript
+parse('foo');
+parse('@foo/bar');
+parse('@foo/bar@0.0.1');
 ```
 
 ## Contributing

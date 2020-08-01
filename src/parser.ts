@@ -6,6 +6,7 @@ import {blacklist} from './blacklist';
 type Package = {
     scope?: string;
     name: string;
+    version?: string;
 }
 
 function parse(input: string): Package | never {
@@ -13,7 +14,7 @@ function parse(input: string): Package | never {
         throw Error('Name cannot be an empty value');
     }
 
-    const {scope, name}: Package = grammar.parse(input);
+    const {scope, name, version}: Package = grammar.parse(input);
 
     if (!scope) {
         if (blacklist.includes(name)) {
@@ -25,7 +26,7 @@ function parse(input: string): Package | never {
         }
     }
 
-    return {scope, name};
+    return {scope, name, version};
 }
 
 export {parse};

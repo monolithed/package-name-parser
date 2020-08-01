@@ -1,6 +1,6 @@
 {
     "name": "@pobedit/package-name-parser",
-    "version": "0.0.2",
+    "version": "1.0.0",
     "description": "A package name parser",
     "keywords": [
         "package name parser",

@@ -67,7 +67,7 @@ describe('Basic validation', () => {
         const actual = () => parse('package ');
 
         assert.throws(actual, {
-            message: 'Expected [a-z0-9_.\\-] or end of input but " " found.'
+            message: 'Expected "@", [a-z0-9_.\\-], or end of input but " " found.'
         });
     });
 
@@ -75,7 +75,7 @@ describe('Basic validation', () => {
         const actual = () => parse('@scope/package ');
 
         assert.throws(actual, {
-            message: 'Expected [a-z0-9_.\\-] or end of input but " " found.'
+            message: 'Expected "@", [a-z0-9_.\\-], or end of input but " " found.'
         });
     });
 
@@ -109,7 +109,7 @@ describe('Special characters', () => {
         const actual = () => parse('package!');
 
         assert.throws(actual, {
-            message: 'Expected [a-z0-9_.\\-] or end of input but "!" found.'
+            message: 'Expected "@", [a-z0-9_.\\-], or end of input but "!" found.'
         });
     });
 
@@ -272,5 +272,57 @@ describe('Builtin characters', () => {
         const {scope, name} = parse(`@scope/${expected}`);
 
         assert.strictEqual(name, expected);
+    });
+});
+
+describe('Version', () => {
+    it('Major version', () => {
+        const expected = '1';
+        const {version} = parse(`name@${expected}`);
+
+        assert.strictEqual(version, expected);
+    });
+
+    it('Major version (scope)', () => {
+        const expected = '1';
+        const {version} = parse(`@scope/name@${expected}`);
+
+        assert.strictEqual(version, '1');
+    });
+
+    it('Minor version', () => {
+        const expected = '1.2';
+        const {version} = parse(`@scope/name@${expected}`);
+
+        assert.strictEqual(version, '1.2');
+    });
+
+    it('Minor version (scope)', () => {
+        const expected = '1.2';
+        const {version} = parse(`@scope/name@${expected}`);
+
+        assert.strictEqual(version, expected);
+    });
+
+    it('Patch version', () => {
+        const expected = '1.2';
+        const {version} = parse(`@scope/name@${expected}`);
+
+        assert.strictEqual(version, expected);
+    });
+
+    it('Patch version (scope)', () => {
+        const expected = '1.2.3';
+        const {version} = parse(`@scope/name@${expected}`);
+
+        assert.strictEqual(version, expected);
+    });
+
+    it('http (scope)', () => {
+        const actual = () => parse('@scope/name@');
+
+        assert.throws(actual, {
+            message: 'Expected [0-9] but end of input found.'
+        });
     });
 });

@@ -8,49 +8,74 @@
     const MAX_SIZE = 214;
 }
 
-Main
-    = input:Package {
-        const {length} = text();
+/*
+ * --------------------
+ * Package
+ * --------------------
+*/
 
-        if (length > MAX_SIZE) {
-            return error(`The name must be less than or equal to ${MAX_SIZE} characters`);
-        }
+Main = input:Package {
+    const {length} = text();
 
-        return input;
+    if (length > MAX_SIZE) {
+        return error(`The name must be less than or equal to ${MAX_SIZE} characters`);
     }
-;
 
-Package
-    = input:FullName {
-        return input;
+    return input;
+};
+
+Package = PackageWithVersion / PackageWithScope / PackageName;
+
+/*
+ * --------------------
+ * Name
+ * --------------------
+*/
+
+Id = id:$[a-z0-9_.-]+ {
+    const position = id.search(INVALID_LEADING_CHARACTERS);
+
+    if (position !== -1) {
+        const {start} = location();
+
+        return error(`Unexpected character "${id[position]}" at position ${start.column}.`);
     }
-    / input:ShortName {
-        return input;
-    }
-;
 
-Id
-    = id:$[a-z0-9_.-]+ {
-        const position = id.search(INVALID_LEADING_CHARACTERS);
+    return id;
+};
 
-        if (position !== -1) {
-            const {start} = location();
+PackageName = name:Id {
+    return {name};
+};
 
-            return error(`Unexpected character "${id[position]}" at position ${start.column}.`);
-        }
+/*
+ * --------------------
+ * Scope
+ * --------------------
+*/
 
-        return id;
-    }
-;
+PackageWithScope = "@" scope:Id "/" name:Id {
+    return {scope, name};
+};
 
-ShortName
-    = name:Id {
-        return {name};
-    }
-;
+/*
+ * --------------------
+ * Version
+ * --------------------
+*/
 
-FullName
-    = "@" scope:Id "/" name:Id {
-        return {scope, name};
+Integer = integer:$[0-9]+ {
+    return integer
+};
+
+MajorVersion = Integer;
+MinorVersion = Integer "." Integer;
+PatchVersion = Integer "." Integer "." Integer;
+
+Version = $(PatchVersion / MinorVersion / MajorVersion);
+
+PackageWithVersion =
+    name:(PackageWithScope / PackageName) "@" version:Version {
+        return {...name, version};
     }
 ;
