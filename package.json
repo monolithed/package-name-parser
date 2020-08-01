@@ -1,7 +1,11 @@
 {
     "name": "@pobedit/package-name-parser",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "description": "A package name parser",
+    "keywords": [
+        "package name parser",
+        "package name validator"
+    ],
     "author": "Alexander Abashkin <monolithed@gmail.com>",
     "license": "MIT",
     "repository": {

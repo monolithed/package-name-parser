@@ -25,10 +25,10 @@ yarn add @pobedit/package-name
 ## Basic usage
 
 ```typescript
-import {parser} from '@pobedit/package-name-parser';
+import {parse} from '@pobedit/package-name-parser';
 
 try {
-    const {scope, name} = parser('@foo/bar');
+    const {scope, name} = parse('@foo/bar');
 
     console.log(scope, name) // -> {scope: 'foo', name: 'bar'}
 }

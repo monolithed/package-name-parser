@@ -8,7 +8,7 @@ type Package = {
     name: string;
 }
 
-const parse = (input: string): Package | never => {
+function parse(input: string): Package | never {
     if (!input) {
         throw Error('Name cannot be an empty value');
     }
@@ -26,6 +26,6 @@ const parse = (input: string): Package | never => {
     }
 
     return {scope, name};
-};
+}
 
 export {parse};
