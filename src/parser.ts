@@ -6,8 +6,14 @@ import {blacklist} from './blacklist';
 type Package = {
     scope?: string;
     name: string;
-    version?: string;
-}
+    version?: {
+        basic: string;
+        comparator?: string;
+        preRelease?: string;
+        buildMetadata?: string;
+        original: string;
+    }
+};
 
 function parse(input: string): Package | never {
     if (!input) {

@@ -1,10 +1,11 @@
 {
     "name": "@pobedit/package-name-parser",
-    "version": "1.0.0",
-    "description": "A package name parser",
+    "version": "2.0.0",
+    "description": "A package name parser and semantic versioner",
     "keywords": [
         "package name parser",
-        "package name validator"
+        "package name validator",
+        "semantic versioner"
     ],
     "author": "Alexander Abashkin <monolithed@gmail.com>",
     "license": "MIT",
@@ -17,13 +18,14 @@
         "compile": "pegjs -o ./src/grammar.js ./src/grammar.peg"
     },
     "devDependencies": {
-        "@types/node": "14.0.13",
         "@types/mocha": "7.0.2",
-        "mocha": "8.0.1",
+        "@types/node": "14.0.13",
+        "mocha": "^8.1.1",
         "pegjs": "^0.10.0",
         "typescript": "^3.9.5"
     },
     "dependencies": {
-        "builtin-modules": "^3.1.0"
+        "builtin-modules": "^3.1.0",
+        "lodash": "^4.17.19"
     }
 }

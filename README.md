@@ -4,7 +4,7 @@
 [![License](https://img.shields.io/badge/license-MIT-brightgreen.svg)](LICENSE.txt)
 
 
-A [package name](https://docs.npmjs.com/files/package.json?#name) parser.
+A [package name](https://docs.npmjs.com/files/package.json?#name) parser and [the semantic versioner](https://docs.npmjs.com/misc/semver) for npm packages.
 
 ## Installation
 
@@ -22,20 +22,42 @@ npm install @pobedit/package-name-parser --save
 yarn add @pobedit/package-name
 ```
 
+## Synopsis
+
+type Package = {
+    scope?: string;
+    name: string;
+    version?: {
+        basic: string;
+        comparator?: string;
+        preRelease?: string;
+        buildMetadata?: string;
+        original: string;
+    }
+};
+
+parse(input: string): Package | never;
+
 ## Basic usage
 
 ```typescript
 import {parse} from '@pobedit/package-name-parser';
 
 try {
-    const {scope, name, version} = parse('@foo/bar@0.0.1');
+    const {scope, name, version} = parse('@foo/bar@^1.0.0-alpha+0.0.1f');
 
     console.log(scope, name, version);
     /*
     {
         scope: 'foo',
         name: 'bar',
-        version: '0.0.1'
+        version: {
+            basic: '1.0.0',
+            comparator: '^',
+            preRelease: 'alpha',
+            buildMetadata: '0.0.1f',
+            original: '^1.0.0-alpha+0.0.1f'
+        }
     }
     */
 }
@@ -50,6 +72,9 @@ catch ({message}) {
 parse('foo');
 parse('@foo/bar');
 parse('@foo/bar@0.0.1');
+parse('@foo/bar@0.0.1-alpha');
+parse('@foo/bar@0.0.1+beta');
+parse('@foo/bar@0.0.1-alpha+beta');
 ```
 
 ## Contributing

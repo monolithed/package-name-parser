@@ -1,11 +1,15 @@
 /*
+ @see https://docs.npmjs.com/misc/semver
  @see https://docs.npmjs.com/misc/scope
  @see https://docs.npmjs.com/files/package.json
+ @see https://semver.npmjs.com
 */
 
 {
     const INVALID_LEADING_CHARACTERS = /^[._]/;
-    const MAX_SIZE = 214;
+    const MAX_PACKAGE_NAME_LENGTH = 214;
+    const MAX_VERSION_LENGHT = 16;
+    const MAX_VERSION_VALUE = '(2 ** 53 - 1)';
 }
 
 /*
@@ -15,10 +19,15 @@
 */
 
 Main = input:Package {
-    const {length} = text();
+    let {length} = text();
+    const {version} = input;
 
-    if (length > MAX_SIZE) {
-        return error(`The name must be less than or equal to ${MAX_SIZE} characters`);
+    if (version) {
+        length -= version.original.length - 1;
+    }
+
+    if (length > MAX_PACKAGE_NAME_LENGTH) {
+        return error(`The name must be less than or equal to ${MAX_PACKAGE_NAME_LENGTH} characters`);
     }
 
     return input;
@@ -64,12 +73,12 @@ PackageWithScope = "@" scope:Id "/" name:Id {
  * --------------------
 */
 
-Version = specifier:VersionSpecifier ? version:(SemverVersion / NpmVersion) {
-    if (specifier) {
-        version.original = specifier + version.original;
+Version = comparator:UnaryComparator ? version:(SemverVersion / NpmVersion) {
+    if (comparator) {
+        version.original = comparator + version.original;
     }
 
-    return {specifier, ...version};
+    return {comparator, ...version};
 }
 
 PackageWithVersion = name:(PackageWithScope / PackageName) "@" version:Version {
@@ -82,15 +91,104 @@ PackageWithVersion = name:(PackageWithScope / PackageName) "@" version:Version {
  * --------------------
 */
 
-WildcardVersion = "*" / "x";
-VersionSpecifier = "~" / "^";
-OptionalVersion = NumericIdentifier / WildcardVersion;
+/*
+Ranges
+
+A version range is a set of comparators which specify versions that satisfy the range.
+*/
+
+/*
+X-Ranges 1.2.x 1.X 1.2.* *
+
+Any of X, x, or * may be used to "stand in" for one of the numeric values in the [major, minor, patch] tuple.
+A partial version range is treated as an X-Range, so the special character is in fact optional.
+*/
+
+XRange = "*" / "x" / "X";
+
+/*
+Tilde Ranges ~1.2.3 ~1.2 ~1
+
+Allows patch-level changes if a minor version is specified on the comparator.
+Allows minor-level changes if not.
+*/
+
+TildeRange = "~";
+
+/*
+Caret Ranges ^1.2.3 ^0.2.5 ^0.0.4
+
+Allows changes that do not modify the left-most non-zero digit in the [major, minor, patch] tuple.
+In other words, this allows patch and minor updates for versions 1.0.0 and above,
+patch updates for versions 0.X >=0.1.0, and no updates for versions 0.0.X.
+
+Many authors treat a 0.x version as if the x were the major “breaking-change” indicator.
+
+Caret ranges are ideal when an author may make breaking changes between 0.2.4 and 0.3.0 releases,
+which is a common practice.
+However, it presumes that there will not be breaking changes between 0.2.4 and 0.2.5.
+It allows for changes that are presumed to be additive (but non-breaking),
+according to commonly observed practices.
+
+When parsing caret ranges, a missing patch value desugars to the number 0,
+but will allow flexibility within that value, even if the major and minor versions are both 0.
+*/
+
+CaretRange = "^";
+
+/*
+Hyphen Ranges X.Y.Z - A.B.C
+
+If a partial version is provided as the first version in the inclusive range,
+then the missing pieces are replaced with zeroes.
+
+If a partial version is provided as the second version in the inclusive range,
+then all versions that start with the supplied parts of the tuple are accepted,
+but nothing that would be greater than the provided tuple parts.
+*/
+
+//HyphenRange = "-";
+
+/*
+Equal Ranges 1.2.3 = 1.2.3
+
+If no operator is specified, then equality is assumed, so this operator is optional, but MAY be included.
+*/
+
+//EqualRange = "=" / " ";
+
+/*
+Disjunction Ranges 1.2.3 || 1.2.3
+
+A range is composed of one or more comparator sets, joined by ||.
+A version matches a range if and only if every comparator in at least one of the ||-separated comparator
+sets is satisfied by the version.
+*/
+
+//DisjunctionRange = "||";
+
+/*
+Logical Range 1.2.3 >= 1.2.4
+*/
+
+LogicalRange = "<=" / ">=" / "<" / ">";
+
+/*
+Unary Comparator ^1.2.3
+*/
+
+UnaryComparator = LogicalRange / TildeRange / CaretRange;
+
+/*
+Binary Comparator 1.2.3 = 1.2.3
+*/
+
+//BinaryComparator = LogicalRange / DisjunctionRange / HyphenRange / EqualRange;
+
+OptionalVersion = NumericIdentifier / XRange;
 
 NpmVersion = basic:$(OptionalVersion ("." OptionalVersion) ? ("." OptionalVersion) ?) {
-   return {
-           basic,
-        original: text()
-   };
+    return {basic, original: text()};
 };
 
 /*
@@ -99,52 +197,32 @@ NpmVersion = basic:$(OptionalVersion ("." OptionalVersion) ? ("." OptionalVersio
  * --------------------
 */
 
-SemverVersion = FullVersion /
-                BuildMetadata /
-                PreReleaseVersion /*
-                VersionCore*/;
+SemverVersion = FullVersion / BuildMetadata / PreReleaseVersion /* VersionCore */;
 
-FullVersion = basic:$VersionCore "-" preRelease:$DotSeparatedPreReleaseIdentifiers "+" buildMetadata:$DotSeparatedBuildIdentifiers {
-    return {
-        basic,
-        preRelease,
-        buildMetadata,
-        original: text()
-   };
+FullVersion = basic:$VersionCore "-" preRelease:$PreReleaseIdentifiers "+" buildMetadata:$BuildIdentifiers {
+    return {basic, preRelease, buildMetadata, original: text()};
 };
 
-BuildMetadata = basic:$VersionCore "+" buildMetadata:$DotSeparatedBuildIdentifiers {
-    return {
-        basic,
-        buildMetadata,
-        original: text()
-    };
+BuildMetadata = basic:$VersionCore "+" buildMetadata:$BuildIdentifiers {
+    return {basic, buildMetadata, original: text()};
 };
 
-PreReleaseVersion = basic:$VersionCore "-" preRelease:$DotSeparatedPreReleaseIdentifiers {
-    return {
-        basic,
-        preRelease,
-        original: text()
-    };
+PreReleaseVersion = basic:$VersionCore "-" preRelease:$PreReleaseIdentifiers {
+    return {basic, preRelease, original: text()};
 };
 
 BasicVersion = basic:$VersionCore {
-    return {
-        basic,
-        original: text()
-    };
+    return {basic, original: text()};
 };
 
-VersionCore = $(majorVersion:NumericIdentifier "." minorVersion:NumericIdentifier "." patchVersion:NumericIdentifier);
+VersionCore = $(major:NumericIdentifier "." minor:NumericIdentifier "." patch:NumericIdentifier);
 
-DotSeparatedPreReleaseIdentifiers = PreReleaseIdentifier "." DotSeparatedPreReleaseIdentifiers /
-                                    PreReleaseIdentifier;
+PreReleaseIdentifiers = PreReleaseIdentifier "." PreReleaseIdentifiers / PreReleaseIdentifier;
 
-DotSeparatedBuildIdentifiers = BuildIdentifier "." DotSeparatedBuildIdentifiers /
-                               BuildIdentifier;
+BuildIdentifiers = BuildIdentifier "." BuildIdentifiers / BuildIdentifier;
 
 PreReleaseIdentifier = (AlphanumericIdentifier / NumericIdentifier)+;
+
 BuildIdentifier = (AlphanumericIdentifier / Digits)+;
 
 AlphanumericIdentifier = IdentifierCharacters NonDigit IdentifierCharacters /
@@ -152,25 +230,24 @@ AlphanumericIdentifier = IdentifierCharacters NonDigit IdentifierCharacters /
                          NonDigit IdentifierCharacters /
                          NonDigit;
 
-NumericIdentifier = PositiveDigit Digits /
-                    PositiveDigit /
-                    "0";
+NumericIdentifier = PositiveDigit Digits / PositiveDigit / "0";
 
-IdentifierCharacters = IdentifierCharacter IdentifierCharacters /
-                       IdentifierCharacter;
+IdentifierCharacters = IdentifierCharacter IdentifierCharacters / IdentifierCharacter;
 
-IdentifierCharacter = Digit /
-                      NonDigit;
+IdentifierCharacter = Digit / NonDigit;
 
-NonDigit = Letter /
-           "-";
+NonDigit = Letter / "-";
 
-Digits = Digit Digits /
-         Digit;
+Digits = Digit Digits / Digit;
 
+Digit = "0" / PositiveDigit;
 
-Digit = "0" /
-        PositiveDigit
+PositiveDigit = value:$[1-9]+ {
+    if (value > Number.MAX_SAFE_INTEGER) {
+        return error(`The maximum length of version is ${MAX_VERSION_LENGHT} characters and the maximum value is ${MAX_VERSION_VALUE} for each item.`);
+    }
 
-PositiveDigit = [1-9]+
-Letter = [a-zA-Z]+
+    return value;
+};
+
+Letter = [a-zA-Z]+;
