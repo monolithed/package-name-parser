@@ -64,18 +64,113 @@ PackageWithScope = "@" scope:Id "/" name:Id {
  * --------------------
 */
 
-Integer = integer:$[0-9]+ {
-    return integer
+Version = specifier:VersionSpecifier ? version:(SemverVersion / NpmVersion) {
+    if (specifier) {
+        version.original = specifier + version.original;
+    }
+
+    return {specifier, ...version};
+}
+
+PackageWithVersion = name:(PackageWithScope / PackageName) "@" version:Version {
+    return {...name, version};
 };
 
-MajorVersion = Integer;
-MinorVersion = Integer "." Integer;
-PatchVersion = Integer "." Integer "." Integer;
+/*
+ * --------------------
+ * Npm version
+ * --------------------
+*/
 
-Version = $(PatchVersion / MinorVersion / MajorVersion);
+WildcardVersion = "*" / "x";
+VersionSpecifier = "~" / "^";
+OptionalVersion = NumericIdentifier / WildcardVersion;
 
-PackageWithVersion =
-    name:(PackageWithScope / PackageName) "@" version:Version {
-        return {...name, version};
-    }
-;
+NpmVersion = basic:$(OptionalVersion ("." OptionalVersion) ? ("." OptionalVersion) ?) {
+   return {
+           basic,
+        original: text()
+   };
+};
+
+/*
+ * --------------------
+ * Semantic version
+ * --------------------
+*/
+
+SemverVersion = FullVersion /
+                BuildMetadata /
+                PreReleaseVersion /*
+                VersionCore*/;
+
+FullVersion = basic:$VersionCore "-" preRelease:$DotSeparatedPreReleaseIdentifiers "+" buildMetadata:$DotSeparatedBuildIdentifiers {
+    return {
+        basic,
+        preRelease,
+        buildMetadata,
+        original: text()
+   };
+};
+
+BuildMetadata = basic:$VersionCore "+" buildMetadata:$DotSeparatedBuildIdentifiers {
+    return {
+        basic,
+        buildMetadata,
+        original: text()
+    };
+};
+
+PreReleaseVersion = basic:$VersionCore "-" preRelease:$DotSeparatedPreReleaseIdentifiers {
+    return {
+        basic,
+        preRelease,
+        original: text()
+    };
+};
+
+BasicVersion = basic:$VersionCore {
+    return {
+        basic,
+        original: text()
+    };
+};
+
+VersionCore = $(majorVersion:NumericIdentifier "." minorVersion:NumericIdentifier "." patchVersion:NumericIdentifier);
+
+DotSeparatedPreReleaseIdentifiers = PreReleaseIdentifier "." DotSeparatedPreReleaseIdentifiers /
+                                    PreReleaseIdentifier;
+
+DotSeparatedBuildIdentifiers = BuildIdentifier "." DotSeparatedBuildIdentifiers /
+                               BuildIdentifier;
+
+PreReleaseIdentifier = (AlphanumericIdentifier / NumericIdentifier)+;
+BuildIdentifier = (AlphanumericIdentifier / Digits)+;
+
+AlphanumericIdentifier = IdentifierCharacters NonDigit IdentifierCharacters /
+                         IdentifierCharacters NonDigit /
+                         NonDigit IdentifierCharacters /
+                         NonDigit;
+
+NumericIdentifier = PositiveDigit Digits /
+                    PositiveDigit /
+                    "0";
+
+IdentifierCharacters = IdentifierCharacter IdentifierCharacters /
+                       IdentifierCharacter;
+
+IdentifierCharacter = Digit /
+                      NonDigit;
+
+NonDigit = Letter /
+           "-";
+
+Digits = Digit Digits /
+         Digit;
+
+
+Digit = "0" /
+        PositiveDigit
+
+PositiveDigit = [1-9]+
+Letter = [a-zA-Z]+
