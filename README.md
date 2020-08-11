@@ -24,6 +24,7 @@ yarn add @pobedit/package-name
 
 ## Synopsis
 
+```typescript
 type Package = {
     scope?: string;
     name: string;
@@ -35,6 +36,7 @@ type Package = {
         original: string;
     }
 };
+```
 
 parse(input: string): Package | never;
 
@@ -97,3 +99,12 @@ npm publish --access public --verbose
 ## License
 
 MIT
+
+## Useful links
+
+[npm semver calculator](https://semver.npmjs.com)
+[The semantic versioner for npm](https://docs.npmjs.com/misc/semver)
+[Scoped packages](https://docs.npmjs.com/misc/scope)
+[Specifics of npm's package.json handling](https://docs.npmjs.com/files/package.json)
+[Semantic Versioning 2.0.0](https://semver.org)
+
