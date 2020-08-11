@@ -36,9 +36,9 @@ type Package = {
         original: string;
     }
 };
-```
 
 parse(input: string): Package | never;
+```
 
 ## Basic usage
 
